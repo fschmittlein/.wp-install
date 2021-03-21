@@ -1,12 +1,39 @@
 #!/bin/bash
 
-wp cli version
+showHelp() {
+# `cat << EOF` This means that cat should stop reading when EOF is detected
+cat << EOF  
+Usage: ./wp-install hoster [-hdi]
+Easy installation of WordPress via the console directly on the server.
+
+-h, -help,			--help			Display help
+
+-d, -del,			--del			Deletes the WordPress installation
+
+-i, -interactive,	--interactive	Asks interactive your environment for the WordPress installation
+
+EOF
+# EOF is found above and hence cat command stops reading. This is equivalent to echo but much neater when printing out.
+}
+
+
+case $1 in
+  all-inkl | allinkl)
+	hoster=allinkl
+    ;;
+  uberspace)
+	hoster=uberspace
+    ;;
+esac
+
+
+wp cli version 1>/dev/null
 if [ $? -ne 0 ]; then
 	echo "Unfortunately, the WP-CLI is not available, so I have to abort."
 	exit 1
 fi
 
-wp cli has-command "dotenv"
+wp cli has-command "dotenv" 2>/dev/null
 if [ $? -ne 0 ]; then
 	wp package install aaemnnosttv/wp-cli-dotenv-command
 	if [ $? -ne 0 ]; then
@@ -14,37 +41,47 @@ if [ $? -ne 0 ]; then
 	fi
 fi
 
-while getopts "hdi" option; do
-  case $option in
-    h | -help)
-	  echo "usage: $0 hoster [-d] [-i]"
-	  exit
-	  ;;
-#    all-inkl | allinkl)
-#	  echo "Hoster: all-inkl"
-#      ;;
-#	uberspace)
-#	  echo "Hoster: uberspace"
-#	  ;;
-	d | -del | --del | -delete | --delete)
-      echo "The WordPress installation will be deleted..."
-	  wp db clean --yes
-	  rm -f -d -r ../wp-admin
-	  rm -f -d -r ../wp-content
-	  rm -f -d -r ../wp-includes
-	  rm ../*
-	  rm ../.htaccess
-	  exit
-      ;;
-	i | -interactive | --interactive)
-      wp dotenv init --template=.env.example --interactive
-	  ;;
-    ?)
-	  echo "error: option -$OPTARG is not implemented"
-	  exit
-	  ;;
-  esac
+# $@ is all command line parameters passed to the script.
+# -o is for short options like -v
+# -l is for long options with double dash like --version
+# the comma separates different long options
+# -a is for long options with single dash like -version
+options=$(getopt -l "help,del,delete,interactive" -o "hdi" -a -- "$@")
+
+# set --:
+# If no arguments follow this option, then the positional parameters are unset. Otherwise, the positional parameters 
+# are set to the arguments, even if some of them begin with a ‘-’.
+eval set -- "$options"
+
+while true
+do
+	case $1 in
+		-h | --help) 
+			showHelp
+			exit 0;;
+		-d | --d | -del | --del | -delete | --delete)
+			if [ -f '../wp-cron.php' ]; then
+				echo "The WordPress installation will be deleted..."
+				wp db clean --yes
+				rm -f -d -r ../wp-admin
+				rm -f -d -r ../wp-content
+				rm -f -d -r ../wp-includes
+				rm ../*
+				rm ../.htaccess
+			else
+				echo "There is nothing to delete!"
+			fi
+			exit;;
+		-i | --i | -interactive | --interactive)
+			wp dotenv init --template=.env.example --interactive
+			break;;
+		--)
+			shift
+			break;;
+	esac
+	shift
 done
+  
 
 if ! [ -f './.env' ]; then
 	echo "The information for the WordPress installation is missing. Therefore the query starts now..."
