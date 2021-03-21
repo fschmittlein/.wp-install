@@ -2,8 +2,8 @@
 
 showHelp() {
 # `cat << EOF` This means that cat should stop reading when EOF is detected
-cat << EOF  
-Usage: ./wp-install hoster [-hdi]
+cat << EOF
+Usage: ./wp-install [-hdi]
 Easy installation of WordPress via the console directly on the server.
 
 -h, -help,			--help			Display help
@@ -16,23 +16,18 @@ EOF
 # EOF is found above and hence cat command stops reading. This is equivalent to echo but much neater when printing out.
 }
 
-
-case $1 in
-  all-inkl | allinkl)
-	hoster=allinkl
-    ;;
-  uberspace)
-	hoster=uberspace
-    ;;
-esac
-
-
+###
+### Check for wp cli
+###
 wp cli version 1>/dev/null
 if [ $? -ne 0 ]; then
 	echo "Unfortunately, the WP-CLI is not available, so I have to abort."
 	exit 1
 fi
 
+###
+### Check for package aaemnnosttv/wp-cli-dotenv-command
+###
 wp cli has-command "dotenv" 2>/dev/null
 if [ $? -ne 0 ]; then
 	wp package install aaemnnosttv/wp-cli-dotenv-command
@@ -41,6 +36,9 @@ if [ $? -ne 0 ]; then
 	fi
 fi
 
+###
+### What work is waiting for me?
+###
 # $@ is all command line parameters passed to the script.
 # -o is for short options like -v
 # -l is for long options with double dash like --version
@@ -73,7 +71,7 @@ do
 			fi
 			exit;;
 		-i | --i | -interactive | --interactive)
-			wp dotenv init --template=.env.example --interactive
+			wp dotenv init --template=.env.wordpress --interactive
 			break;;
 		--)
 			shift
@@ -81,11 +79,16 @@ do
 	esac
 	shift
 done
-  
+
+if [ -f '../wp-cron.php' ]; then
+	echo "WordPress files seem to already be present here, so I have to abort."
+	exit 1
+fi
+
 
 if ! [ -f './.env' ]; then
 	echo "The information for the WordPress installation is missing. Therefore the query starts now..."
-	wp dotenv init --template=.env.example --interactive
+	wp dotenv init --template=.env.wordpress --interactive
 fi
 
 
@@ -102,6 +105,9 @@ wp_url=$(wp dotenv get wp_url)
 wp_title=$(wp dotenv get wp_title)
 wp_admin_user=$(wp dotenv get wp_admin_user)
 wp_admin_email=$(wp dotenv get wp_admin_email)
+
+wp_memory_limit=$(wp dotenv get wp_memory_limit)
+wp_environment=$(wp dotenv get wp_environment)
 
 wp_blogdescription=$(wp dotenv get wp_blogdescription) 
 wp_plugin_install=$(wp dotenv get wp_plugin_install) 
@@ -128,21 +134,18 @@ wp site empty --uploads --yes
 ## delete all default plugins
 wp plugin delete --all
 
-## Removes all widgets from the sidebar and places them in Inactive Widgets.
-wp widget reset --all
-
 
 
 ## get new salts for your wp-config.php file
 wp config shuffle-salts
 
 ## more ram
-wp config set WP_MEMORY_LIMIT 512M
-wp config set WP_MAX_MEMORY_LIMIT 512M
+wp config set WP_MEMORY_LIMIT $wp_memory_limit
+wp config set WP_MAX_MEMORY_LIMIT $wp_memory_limit
 
 ## set the environment type
-wp config set WP_ENVIRONMENT_TYPE production
-wp config set WP_ENV production
+wp config set WP_ENVIRONMENT_TYPE $wp_environment
+wp config set WP_ENV $wp_environment
 
 ## Automatic Database Optimizing
 wp config set WP_ALLOW_REPAIR false --raw
@@ -196,10 +199,13 @@ wp plugin install $wp_plugin_install --activate
 ## after installing all plugins, update the language
 wp language plugin install --all $wp_locale
 
-##install and activate theme
+## install and activate theme
 wp theme install $wp_theme_install
 wp theme activate $wp_theme_install
 wp theme delete $wp_theme_delete
+
+## Removes all widgets from the sidebar and places them in Inactive Widgets.
+wp widget reset --all
 
 
 
