@@ -6,11 +6,11 @@ cat << EOF
 Usage: ./wp-install [-hdi]
 Easy installation of WordPress via the console directly on the server.
 
--h, -help, --help			Display help
+-h, --help			Display help
 
--d, -del, --del				Deletes the WordPress installation (without any warning)
+-d, --del			Deletes the WordPress installation (without any warning)
 
--i, -interactive, --interactive		Asks interactive your environment for the WordPress installation
+-i, --interactive		Asks interactive your environment for the WordPress installation
 
 EOF
 # EOF is found above and hence cat command stops reading. This is equivalent to echo but much neater when printing out.
@@ -61,7 +61,7 @@ do
 		-h | --help) 
 			showHelp
 			exit 0;;
-		-d | --d | -del | --del | -delete | --delete)
+		-d | --del | --delete)
 			if [ -f '../wp-cron.php' ]; then
 				echo "The WordPress installation will be deleted..."
 				wp db clean --yes
@@ -74,7 +74,7 @@ do
 				echo "There is nothing to delete!"
 			fi
 			exit;;
-		-i | --i | -interactive | --interactive)
+		-i | --interactive)
 			wp dotenv init --template=.env.wordpress --interactive
 			break;;
 		--no-htaccess)
@@ -232,5 +232,5 @@ fi
 
 
 if $self_destruct; then
-	rm -f -d -r ./wp-install/
+	rm -f -d -r .wp-install/
 fi
