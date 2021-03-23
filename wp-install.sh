@@ -6,11 +6,11 @@ cat << EOF
 Usage: ./wp-install [-hdi]
 Easy installation of WordPress via the console directly on the server.
 
--h, -help,			--help			Display help
+-h, -help, --help			Display help
 
--d, -del,			--del			Deletes the WordPress installation
+-d, -del, --del				Deletes the WordPress installation (without any warning)
 
--i, -interactive,	--interactive	Asks interactive your environment for the WordPress installation
+-i, -interactive, --interactive		Asks interactive your environment for the WordPress installation
 
 EOF
 # EOF is found above and hence cat command stops reading. This is equivalent to echo but much neater when printing out.
@@ -31,6 +31,7 @@ fi
 wp cli has-command "dotenv" 2>/dev/null
 if [ $? -ne 0 ]; then
 	wp package install aaemnnosttv/wp-cli-dotenv-command
+	# plan b in case the memory runs out
 	if [ $? -ne 0 ]; then
 		php -d memory_limit=512M "$(which wp)" package install aaemnnosttv/wp-cli-dotenv-command
 	fi
@@ -115,6 +116,7 @@ wp_theme_install=$(wp dotenv get wp_theme_install)
 wp_theme_delete=$(wp dotenv get wp_theme_delete)
 
 
+## change directory to the doc-root
 cd ..
 
 
