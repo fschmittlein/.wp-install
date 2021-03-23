@@ -37,8 +37,8 @@ if [ $? -ne 0 ]; then
 	fi
 fi
 
-$no_htaccess=false
-$self_destruct=false
+no_htaccess=false
+self_destruct=false
 
 ###
 ### What work is waiting for me?
@@ -48,7 +48,7 @@ $self_destruct=false
 # -l is for long options with double dash like --version
 # the comma separates different long options
 # -a is for long options with single dash like -version
-options=$(getopt -l "help,del,delete,interactive" -o "hdi" -a -- "$@")
+options=$(getopt -l "help,del,delete,interactive,no-htaccess,self-destruct,sd" -o "hdi" -a -- "$@")
 
 # set --:
 # If no arguments follow this option, then the positional parameters are unset. Otherwise, the positional parameters 
@@ -77,11 +77,11 @@ do
 		-i | --i | -interactive | --interactive)
 			wp dotenv init --template=.env.wordpress --interactive
 			break;;
-		-no-htaccess | --no-htaccess)
-			$no_htaccess=true
+		--no-htaccess)
+			no_htaccess=true
 			break;;
-		-sd | --sd | -self-destruct | --self-destruct)
-			$self_destruct=true
+		--sd | --self-destruct)
+			self_destruct=true
 			break;;
 		--)
 			shift
@@ -223,7 +223,7 @@ wp widget reset --all
 ## htaccess
 ## https://gist.github.com/seoagentur-hamburg/c96bc796764baaa64d43b70731013f8a
 ## Andreas Hecht
-if ! [ $no_htaccess ]; then
+if ! $no_htaccess; then
 	git clone https://gist.github.com/c96bc796764baaa64d43b70731013f8a.git
 	mv ./c96bc796764baaa64d43b70731013f8a/.htaccess .htaccess
 	rm -f -d -r ./c96bc796764baaa64d43b70731013f8a/
@@ -231,6 +231,6 @@ fi
 
 
 
-if [ $self_destruct ]; then
+if $self_destruct; then
 	rm -f -d -r ./wp-install/
 fi
