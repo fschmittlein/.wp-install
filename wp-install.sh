@@ -96,7 +96,7 @@ if [ -f '../wp-cron.php' ]; then
 fi
 
 
-if ! [ -f './.env' ]; then
+if ! [ -f './.env.wordpress' ]; then
 	echo "The information for the WordPress installation is missing. Therefore the query starts now..."
 	wp dotenv init --template=.env.wordpress --interactive
 fi
